@@ -1,0 +1,5 @@
+*.json
+*.png
+go.mod
+go.sum
+.gitignore
