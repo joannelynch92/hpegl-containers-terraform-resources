@@ -78,7 +78,7 @@ The internal directory contains:
 * Terraform acceptance tests in acceptance_test
 * Service resource terraform CRUD implementation code in resources
 * Code in test-utils that returns a plugin.ProviderFunc object that can be used
-    to create a "dummy" provider for development purposes (see later).  This object can also be used
+    to create a "dummy" provider for development purposes. This object can also be used
     for acceptance tests.
   
 
@@ -158,10 +158,11 @@ terraform objects are created that they are added to pkg/resources/registration.
 
 ### internal/test-utils
 
-The code is this directory should not need to be changed outside of imports.  It constructs a terraform plugin.ProviderFunc object
+The code in this directory should not need to be changed outside of imports.  It constructs a terraform plugin.ProviderFunc object
 that is used to create a "dummy" service-specific terraform provider called hpegl that can be used for
 development work.  See [later](#building-and-using-the-dummy-service-specific-provider) for information on how to
-build and use this "dummy" provider.
+build and use this "dummy" provider. The "dummy" service-specific provider that is created with this function has all of the provider 
+configuration information that is required by the real hpegl provider, which calls-into the same NewProviderFunc()
 
 The code uses the registration.ServiceRegistration and client.InitialiseClient interfaces created in pkg/reources
 and pkg/client respectively to create the ProviderFunc.  This means that only the resources and data-sources in
@@ -169,67 +170,6 @@ addition to the Client defined in this repo are available to the service-specifi
 
 The IAM token Handler is initialised and used to create a Token Retrieve Function that is also passed-in to create
 the ProviderFunc.
-
-The code calls into the hpegl-provider-lib provider.NewProviderFunc like so:
-
-```go
-package testutils
-
-import (
-	"context"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-
-	"github.com/hewlettpackard/hpegl-provider-lib/pkg/provider"
-	"github.com/hewlettpackard/hpegl-provider-lib/pkg/token/common"
-	"github.com/hewlettpackard/hpegl-provider-lib/pkg/token/retrieve"
-	"github.com/hewlettpackard/hpegl-provider-lib/pkg/token/serviceclient"
-
-	"github.com/HewlettPackard/hpegl-containers-terraform-resources/pkg/client"
-	"github.com/HewlettPackard/hpegl-containers-terraform-resources/pkg/resources"
-)
-
-func ProviderFunc() plugin.ProviderFunc {
-	return provider.NewProviderFunc(provider.ServiceRegistrationSlice(resources.Registration{}), providerConfigure)
-}
-
-func providerConfigure(p *schema.Provider) schema.ConfigureContextFunc { // nolint staticcheck
-	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		cli, err := client.InitialiseClient{}.NewClient(d)
-		if err != nil {
-			return nil, diag.Errorf("error in creating client: %s", err)
-		}
-		// Initialise token handler
-		h, err := serviceclient.NewHandler(d)
-		if err != nil {
-			return nil, diag.FromErr(err)
-		}
-
-		// Returning a map[string]interface{} with the Client from pkg.client at the
-		// key specified in that repo and with the token retrieve function at the key
-		// specified by the token package to ensure compatibility with the hpegl terraform
-		// provider.
-		return map[string]interface{}{
-			client.InitialiseClient{}.ServiceName(): cli,
-			common.TokenRetrieveFunctionKey:         retrieve.NewTokenRetrieveFunc(h),
-		}, nil
-	}
-}
-
-```
-
-Note the following:
-* We use a hpegl-provider-lib convenience function to convert resources.Registration from pkg/resources into
-    a slice
-  
-* We create a map[string]interface{} with just two entries for compatibility with the resource code:
-    * one at the key specified by pkg/client that contains the pkg/client Client{} created
-    * one at the key common.TokenRetrieveFunctionKey with the Token Retrive Function to be used in getting tokens
-  
-* The "dummy" service-specific provider that is created with this function has all of the provider configuration
-    information that is required by the real hpegl provider, which calls-into the same NewProviderFunc()
   
 ## Building and using the "dummy" service-specific provider
 
