@@ -40,7 +40,7 @@ $(NAME): $(shell find . -name \*.go)
 default: all
 .PHONY: default
 
-vendor: go.mod
+vendor: go.mod go.sum
 	go mod download
 	go mod vendor
 

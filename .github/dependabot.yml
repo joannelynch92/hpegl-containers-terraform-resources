@@ -23,7 +23,7 @@ updates:
     registries: []
     schedule:
       interval: daily
-  - package-ecosystem: terraform # https://github.com/hpe-hcss/terraform-dependabot
+  - package-ecosystem: terraform
     directory: /examples/cluster-create
     registries: []
     schedule:
