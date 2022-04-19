@@ -58,10 +58,12 @@ really-clean clean-all cleanall: clean
 procs := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null || echo 1)
 # TODO make --debug an option
 
-lint: vendor golangci-lint-config.yaml
-	@golangci-lint --version
-	golangci-lint run --config golangci-lint-config.yaml
-.PHONY: lint
+tools:
+	GO111MODULE=on go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
+
+lint: tools
+	@echo "==> Checking source code against linters..."
+	golangci-lint run ./...
 
 testreport_dir := test-reports
 test:
