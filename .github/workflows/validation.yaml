@@ -8,12 +8,11 @@ jobs:
     strategy:
       matrix:
         go: [ '1.17' ]
-    name: Go ${{ matrix.go }} CI Build
+    name: Validation Tests
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
-      - run: go version
-      - run: make build
-      - run: make test
+      - run: go install github.com/nomad-software/vend@v1.0.3
+      - run: make validate
