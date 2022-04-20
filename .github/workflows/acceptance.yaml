@@ -8,11 +8,11 @@ jobs:
     strategy:
       matrix:
         go: [ '1.17' ]
-    name: Lint
+    name: Acceptance Tests
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
-      - run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.37.1
-      - run: make lint
+      - run: go install github.com/nomad-software/vend@v1.0.3
+      - run: make validate
