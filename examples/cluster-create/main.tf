@@ -22,7 +22,7 @@ provider hpegl {
 
 resource hpegl_caas_cluster test {
   name         = var.cluster_name
-  blueprint_id = "3f31daa9-9777-4c06-a4d0-e49215f5e48c"
-  appliance_id = "233eead2-20de-47ab-b266-2413cdaa3685"
-  space_id     = "f866c9bd-2d2c-4e60-aab0-64737df96273"
+  blueprint_id = ""
+  appliance_id = ""
+  space_id     = ""
 }
