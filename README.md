@@ -262,7 +262,7 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< GL iam service url, defaults to https://client.greenlake.hpe.com/api/iam >
 export HPEGL_API_VENDED_SERVICE_CLIENT=false
 ```
-## To Build and Test the Terraform Provider:
+## To Build and Test the Terraform Provider
 
 Pre-requisites:
 
