@@ -16,6 +16,7 @@
         + [IAM token generation](#iam-token-generation)
             - [API-vended Service Client](#api-vended-service-client)
             - [HPE Service Client](#hpe-service-client)
+    * [To Build and Test the Terraform Provider] (#to-build-and-test-the-terraform-provider)
 
 ## Introduction
 
@@ -261,7 +262,7 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< GL iam service url, defaults to https://client.greenlake.hpe.com/api/iam >
 export HPEGL_API_VENDED_SERVICE_CLIENT=false
 ```
-#### To Build and Test the Terraform Provider:
+## To Build and Test the Terraform Provider:
 
 Pre-requisites:
 
@@ -285,10 +286,10 @@ $ make install
 Export the required environment variables:
 
 ```bash
-export HPEGL_TENANT_ID=< tenant-id >
-export HPEGL_USER_ID=< service client id >
-export HPEGL_USER_SECRET=< service client secret >
-export HPEGL_IAM_SERVICE_URL=< the "issuer" URL for the service client  >
+export HPEGL_TENANT_ID=<tenant-id>
+export HPEGL_USER_ID=<service client id>
+export HPEGL_USER_SECRET=<service client secret>
+export HPEGL_IAM_SERVICE_URL=<the "issuer" URL for the service client >
 ```
 
 To initialize the terraform:
@@ -301,27 +302,27 @@ $ terraform init
 Update examples/cluster-create/main.tf with values for
 
 ```bash
-blueprint_id = ""
-appliance_id = ""
-space_id     = ""
+blueprint_id =<blueprint id>
+appliance_id =<appliance id>
+space_id     =<space id>
 ```
 To create the terraform plan:
 
 ```bash
-terraform plan  --var cluster_name=< cluster name >
+terraform plan  --var cluster_name=<cluster name>
 ```
 
 To apply the plan and create a cluster:
 
 ```bash
-terraform apply --var cluster_name=< cluster name >
+terraform apply --var cluster_name=<cluster name>
 ```
 Note: The timeout for cluster creation is set to 60 mins.
 
 To delete the cluster:
 
 ```bash
-terraform destroy --var cluster_name=< cluster name >
+terraform destroy --var cluster_name=<cluster name>
 ```
 
 
