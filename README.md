@@ -299,6 +299,8 @@ $ cd examples/cluster-create
 $ terraform init
 ```
 
+Note: Ensure there is no .terraform.lock.hcl or .terraform in examples/cluster-create before running terraform init. If this file/folder is present, manually delete it beform initializing the terraform. 
+
 Update examples/cluster-create/main.tf with values for
 
 ```bash
