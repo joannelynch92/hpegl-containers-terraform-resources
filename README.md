@@ -16,7 +16,7 @@
         + [IAM token generation](#iam-token-generation)
             - [API-vended Service Client](#api-vended-service-client)
             - [HPE Service Client](#hpe-service-client)
-    * [To Build and Test the Terraform Provider] (#to-build-and-test-the-terraform-provider)
+    * [To Build and Test the Terraform Provider](#to-build-and-test-the-terraform-provider)
 
 ## Introduction
 
