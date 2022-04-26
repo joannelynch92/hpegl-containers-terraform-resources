@@ -261,3 +261,48 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< GL iam service url, defaults to https://client.greenlake.hpe.com/api/iam >
 export HPEGL_API_VENDED_SERVICE_CLIENT=false
 ```
+#### To Build and Test terraform provider:
+
+Pre-requisites:
+The git command-line utility
+The go programming language package
+Terraform (Version: v1.1.0)
+
+
+Build the Terraform Provider binary:
+$ cd hpegl-containers-terraform-resources
+$ make build
+
+Install the Terraform Provider binary to the local env:
+$ make install
+
+Export the required environment variables and initialize the terraform:
+
+```bash
+export HPEGL_TENANT_ID=< tenant-id >
+export HPEGL_USER_ID=< service client id >
+export HPEGL_USER_SECRET=< service client secret >
+export HPEGL_IAM_SERVICE_URL=< the "issuer" URL for the service client  >
+```
+
+$ cd examples/cluster-create
+$ terraform init
+
+Update examples/cluster-create/main.tf with values for
+
+```bash
+blueprint_id = ""
+appliance_id = ""
+space_id     = ""
+```
+To create the terraform plan:
+terraform plan  --var cluster_name=< cluster name >
+
+To apply the plan and create a cluster:
+terraform apply --var cluster_name=< cluster name >
+
+To delete the cluster:
+terraform destroy --var cluster_name=< cluster name >
+
+
+
