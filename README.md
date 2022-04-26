@@ -264,19 +264,25 @@ export HPEGL_API_VENDED_SERVICE_CLIENT=false
 #### To Build and Test terraform provider:
 
 Pre-requisites:
-The git command-line utility
-The go programming language package
-Terraform (Version: v1.1.0)
 
+* The git command-line utility
+* The go programming language package
+* Terraform (Version: v1.1.0)
 
 Build the Terraform Provider binary:
+
+```bash
 $ cd hpegl-containers-terraform-resources
 $ make build
+```
 
 Install the Terraform Provider binary to the local env:
-$ make install
 
-Export the required environment variables and initialize the terraform:
+```bash
+$ make install
+```
+
+Export the required environment variables:
 
 ```bash
 export HPEGL_TENANT_ID=< tenant-id >
@@ -285,8 +291,12 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< the "issuer" URL for the service client  >
 ```
 
+To initialize the terraform:
+
+```bash
 $ cd examples/cluster-create
 $ terraform init
+```
 
 Update examples/cluster-create/main.tf with values for
 
@@ -296,13 +306,21 @@ appliance_id = ""
 space_id     = ""
 ```
 To create the terraform plan:
+
+```bash
 terraform plan  --var cluster_name=< cluster name >
+```
 
 To apply the plan and create a cluster:
+
+```bash
 terraform apply --var cluster_name=< cluster name >
+```
 
 To delete the cluster:
-terraform destroy --var cluster_name=< cluster name >
 
+```bash
+terraform destroy --var cluster_name=< cluster name >
+```
 
 
