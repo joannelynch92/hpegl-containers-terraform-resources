@@ -23,9 +23,9 @@ This repo contains Containers terraform provider code that we've used while deve
 the hpegl provider (https://github.com/HewlettPackard/terraform-provider-hpegl).  It is
 the exemplar service provider repo, and will form the basis of a Github template.
 
-## Terraform versions
+## Terraform version
 
-Terraform versions >= v0.13 should be used while developing the service provider code.
+This code has been tested against Terraform version v1.1.0
 
 ## Terraform provider & v2.0 SDK
 
@@ -261,7 +261,7 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< GL iam service url, defaults to https://client.greenlake.hpe.com/api/iam >
 export HPEGL_API_VENDED_SERVICE_CLIENT=false
 ```
-#### To Build and Test terraform provider:
+#### To Build and Test the Terraform Provider:
 
 Pre-requisites:
 
@@ -316,6 +316,7 @@ To apply the plan and create a cluster:
 ```bash
 terraform apply --var cluster_name=< cluster name >
 ```
+Note: The timeout for cluster creation is set to 60 mins.
 
 To delete the cluster:
 
