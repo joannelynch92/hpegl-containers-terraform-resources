@@ -16,6 +16,7 @@
         + [IAM token generation](#iam-token-generation)
             - [API-vended Service Client](#api-vended-service-client)
             - [HPE Service Client](#hpe-service-client)
+    * [To Build and Test the Terraform Provider](#to-build-and-test-the-terraform-provider)
 
 ## Introduction
 
@@ -23,9 +24,9 @@ This repo contains Containers terraform provider code that we've used while deve
 the hpegl provider (https://github.com/HewlettPackard/terraform-provider-hpegl).  It is
 the exemplar service provider repo, and will form the basis of a Github template.
 
-## Terraform versions
+## Terraform version
 
-Terraform versions >= v0.13 should be used while developing the service provider code.
+This code has been tested against Terraform version v1.1.0
 
 ## Terraform provider & v2.0 SDK
 
@@ -261,3 +262,67 @@ export HPEGL_USER_SECRET=< service client secret >
 export HPEGL_IAM_SERVICE_URL=< GL iam service url, defaults to https://client.greenlake.hpe.com/api/iam >
 export HPEGL_API_VENDED_SERVICE_CLIENT=false
 ```
+## To Build and Test the Terraform Provider
+
+Pre-requisites:
+
+* The git command-line utility
+* The go programming language package
+* Terraform (Version: v1.1.0)
+
+Build the Terraform Provider binary:
+
+```bash
+$ cd hpegl-containers-terraform-resources
+$ make build
+```
+
+Install the Terraform Provider binary to the local env:
+
+```bash
+$ make install
+```
+
+Export the required environment variables:
+
+```bash
+export HPEGL_TENANT_ID=<tenant-id>
+export HPEGL_USER_ID=<service client id>
+export HPEGL_USER_SECRET=<service client secret>
+export HPEGL_IAM_SERVICE_URL=<the "issuer" URL for the service client >
+```
+
+To initialize the terraform:
+
+```bash
+$ cd examples/cluster-create
+$ terraform init
+```
+
+Update examples/cluster-create/main.tf with values for
+
+```bash
+blueprint_id =<blueprint id>
+appliance_id =<appliance id>
+space_id     =<space id>
+```
+To create the terraform plan:
+
+```bash
+terraform plan  --var cluster_name=<cluster name>
+```
+
+To apply the plan and create a cluster:
+
+```bash
+terraform apply --var cluster_name=<cluster name>
+```
+Note: The timeout for cluster creation is set to 60 mins.
+
+To delete the cluster:
+
+```bash
+terraform destroy --var cluster_name=<cluster name>
+```
+
+
