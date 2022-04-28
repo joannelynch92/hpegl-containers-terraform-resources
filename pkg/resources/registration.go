@@ -24,6 +24,7 @@ func (r Registration) Name() string {
 func (r Registration) SupportedDataSources() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
 		"hpegl_caas_cluster_blueprint": resources.DataSourceClusterBlueprint(),
+		"hpegl_caas_appliance": resources.DataSourceAppliance(),
 	}
 }
 
