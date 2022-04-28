@@ -35,12 +35,16 @@ func testCaasCluster() string {
 			api_url = "https://client.greenlake.hpe.com/api/caas/mcaas/v1"
 		}
 	}
+	data "hpegl_caas_appliance" "blr" {
+		name = "BLR"
+		space_id = "%s"
+	  }
 	resource hpegl_caas_cluster test {
 		name         = "%s%d"
 		blueprint_id = "%s"
-		appliance_id = "%s"
+        appliance_id = data.hpegl_caas_appliance.blr.id
 		space_id     = "%s"
-	}`, clusterName, r.Int63n(99999999), blueprintID, applianceID, spaceID)
+	}`, spaceID, clusterName, r.Int63n(99999999), blueprintID, spaceID)
 }
 
 func TestCaasCreate(t *testing.T) {
