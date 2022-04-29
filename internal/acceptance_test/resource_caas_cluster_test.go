@@ -21,7 +21,6 @@ import (
 const (
 	clusterName = "iac-acc-"
 	blueprintID = "3f31daa9-9777-4c06-a4d0-e49215f5e48c"
-	applianceID = "233eead2-20de-47ab-b266-2413cdaa3685"
 	spaceID     = "f866c9bd-2d2c-4e60-aab0-64737df96273"
 )
 
