@@ -21,7 +21,6 @@ import (
 const (
 	clusterName = "iac-acc-"
 	blueprintID = "3f31daa9-9777-4c06-a4d0-e49215f5e48c"
-	applianceID = "233eead2-20de-47ab-b266-2413cdaa3685"
 	spaceID     = "f866c9bd-2d2c-4e60-aab0-64737df96273"
 )
 
@@ -35,12 +34,16 @@ func testCaasCluster() string {
 			api_url = "https://client.greenlake.hpe.com/api/caas/mcaas/v1"
 		}
 	}
+	data "hpegl_caas_appliance" "blr" {
+		name = "BLR"
+		space_id = "%s"
+	  }
 	resource hpegl_caas_cluster test {
 		name         = "%s%d"
 		blueprint_id = "%s"
-		appliance_id = "%s"
+        appliance_id = data.hpegl_caas_appliance.blr.id
 		space_id     = "%s"
-	}`, clusterName, r.Int63n(99999999), blueprintID, applianceID, spaceID)
+	}`, spaceID, clusterName, r.Int63n(99999999), blueprintID, spaceID)
 }
 
 func TestCaasCreate(t *testing.T) {
