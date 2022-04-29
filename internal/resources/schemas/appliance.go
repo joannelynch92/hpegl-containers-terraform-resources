@@ -1,3 +1,5 @@
+// (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+
 package schemas
 
 import (
