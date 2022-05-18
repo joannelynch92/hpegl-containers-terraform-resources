@@ -16,6 +16,7 @@ import (
 	"github.com/HewlettPackard/hpegl-containers-go-sdk/pkg/mcaasapi"
 
 	"github.com/HewlettPackard/hpegl-containers-terraform-resources/internal/resources/schemas"
+	"github.com/HewlettPackard/hpegl-containers-terraform-resources/internal/utils"
 	"github.com/HewlettPackard/hpegl-containers-terraform-resources/pkg/auth"
 	"github.com/HewlettPackard/hpegl-containers-terraform-resources/pkg/client"
 )
@@ -95,7 +96,8 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 
 	cluster, resp, err := c.CaasClient.ClusterAdminApi.ClustersPost(clientCtx, createCluster)
 	if err != nil {
-		diags = append(diags, diag.Errorf("Error in ClustersPost: %s", err)...)
+		errMessage := utils.GetErrorMessage(err, resp.StatusCode)
+		diags = append(diags, diag.Errorf("Error in ClustersPost: %s - %s", err, errMessage)...)
 
 		return diags
 	}
