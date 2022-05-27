@@ -25,6 +25,7 @@ func (r Registration) SupportedDataSources() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
 		"hpegl_caas_cluster_blueprint": resources.DataSourceClusterBlueprint(),
 		"hpegl_caas_site":              resources.DataSourceAppliance(),
+		"hpegl_caas_machine_blueprint": resources.DataSourceMachineBlueprint(),
 		"hpegl_caas_cluster":           resources.DataSourceCluster(),
 	}
 }
@@ -33,6 +34,7 @@ func (r Registration) SupportedResources() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
 		"hpegl_caas_cluster_blueprint": resources.ClusterBlueprint(),
 		"hpegl_caas_cluster":           resources.Cluster(),
+		"hpegl_caas_machine_blueprint": resources.MachineBlueprint(),
 	}
 }
 

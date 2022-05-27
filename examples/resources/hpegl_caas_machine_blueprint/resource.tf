@@ -7,21 +7,16 @@ terraform {
       # In this example it is caas (see "source" below).  The service-specific replacement
       # to caas must be specified in "source" below and also in the Makefile as the
       # value of DUMMY_PROVIDER.
-      source  = "hpe/hpegl"
-      version = ">= 0.2.0"
+      source  = "terraform.example.com/caas/hpegl"
+      version = ">= 0.0.1"
     }
   }
 }
 
 provider hpegl {
   caas {
-    api_url = "https://mcaas.intg.hpedevops.net/mcaas/v1"
+    api_url = "https://mcaas.intg.hpedevops.net/mcaas"
   }
-}
-
-data "hpegl_caas_cluster_blueprint" "bp" {
-  name = "demo"
-  space_id = ""
 }
 
 data "hpegl_caas_site" "blr" {
@@ -29,9 +24,14 @@ data "hpegl_caas_site" "blr" {
   space_id = ""
 }
 
-resource hpegl_caas_cluster test {
-  name         = "tf-test"
-  blueprint_id = data.hpegl_caas_cluster_blueprint.bp.id
-  site_id = data.hpegl_caas_site.blr.id
-  space_id     = ""
+resource hpegl_caas_machine_blueprint test {
+ name = ""
+ site_id = data.hpegl_caas_site.blr.id
+ machine_roles = ["controlplane"]
+ machine_provider = "vmaas"
+ os_image = "sles-custom"
+ os_version = ""
+ compute_type = ""
+ size = ""
+ storage_type = ""
 }
