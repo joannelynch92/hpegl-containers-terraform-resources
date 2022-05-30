@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 
 terraform {
   required_providers {
@@ -34,9 +34,14 @@ data "hpegl_caas_machine_blueprint" "mbworker" {
   site_id = data.hpegl_caas_site.blr.id
 }
 
+data "hpegl_caas_cluster_provider" "clusterprovider" {
+  name = "ecp"
+  site_id = data.hpegl_caas_site.blr.id
+}
+
 resource hpegl_caas_cluster_blueprint testbp {
   name         = "tf-cluster-bp"
-  k8s_version  = ""
+  k8s_version  = data.hpegl_caas_cluster_provider.clusterprovider.k8s_versions[0]
   default_storage_class = ""
   site_id = data.hpegl_caas_site.blr.id
   cluster_provider = ""
