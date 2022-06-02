@@ -5,6 +5,7 @@ package acceptancetest
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -19,49 +20,46 @@ import (
 
 const (
 	// Fill in these values based on the environment being used for acceptance testing
-	name                = "tf-bp-test"
-	defaultStorageClass = ""
+	name                = "test-cluster-bp"
+	defaultStorageClass = "gl-sbc-glhcnimblestor"
 	clusterProvider     = "ecp"
 	cpCount             = "1"
 	workerName          = "worker1"
 	workerCount         = "1"
-	siteID              = ""
+	cbspaceID           = "8d5dfbc0-f996-4e45-ab34-e719588a96ca"
+	k8sVersion          = "v1.20.11.hpe-2"
 )
 
 // nolint: gosec
 func testCaasClusterBlueprint() string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	return fmt.Sprintf(`
 	provider hpegl {
 		caas {
-			api_url = "https://client.greenlake.hpe.com/api/caas/mcaas"
+			api_url = "https://mcaas.us1.greenlake-hpe.com/mcaas"
 		}
 	}
-	data "hpegl_caas_site" "blr" {
-		name = "BLR"
+	data "hpegl_caas_site" "site" {
+		name = "Austin"
 		space_id = "%s"
 	}
     
     data "hpegl_caas_machine_blueprint" "mbcontrolplane" {
   		name = "standard-master"
-  		site_id = data.hpegl_caas_site.blr.id
+  		site_id = data.hpegl_caas_site.site.id
 	}
 
 	data "hpegl_caas_machine_blueprint" "mbworker" {
   		name = "standard-worker"
-  		site_id = data.hpegl_caas_site.blr.id
+  		site_id = data.hpegl_caas_site.site.id
 	}
 
-    data "hpegl_caas_cluster_provider" "clusterprovider" {
-		name = "ecp"
-		site_id = data.hpegl_caas_site.blr.id
-	  }
-
-	resource hpegl_caas_cluster test {
-		name         = "%s"
-  		k8s_version  = data.hpegl_caas_cluster_provider.clusterprovider.ecp.k8s_versions[0]
+	resource hpegl_caas_cluster_blueprint testcb {
+		name         = "%s%d"
+		k8s_version  = "%s"
   		default_storage_class = "%s"
-  		site_id = data.hpegl_caas_site.blr.id
+  		site_id = data.hpegl_caas_site.site.id
   		cluster_provider = "%s"
 		control_plane_nodes = {
     		machine_blueprint_id = data.hpegl_caas_machine_blueprint.mbcontrolplane.id
@@ -72,7 +70,7 @@ func testCaasClusterBlueprint() string {
       		machine_blueprint_id = data.hpegl_caas_machine_blueprint.mbworker.id
       		count = "%s"
     	}
-	}`, spaceID, name, defaultStorageClass, clusterProvider, cpCount, workerName, workerCount)
+	}`, cbspaceID, name, r.Int63n(99999999), k8sVersion, defaultStorageClass, clusterProvider, cpCount, workerName, workerCount)
 }
 
 func TestCaasClusterBlueprintCreate(t *testing.T) {
@@ -80,11 +78,11 @@ func TestCaasClusterBlueprintCreate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: resource.ComposeTestCheckFunc(testCaasClusterBlueprintDestroy("hpegl_caas_cluster_blueprint.testbp")),
+		CheckDestroy: resource.ComposeTestCheckFunc(testCaasClusterBlueprintDestroy("hpegl_caas_cluster_blueprint.testcb")),
 		Steps: []resource.TestStep{
 			{
 				Config: testCaasClusterBlueprint(),
-				Check:  resource.ComposeTestCheckFunc(checkCaasClusterBlueprint("hpegl_caas_cluster_blueprint.testbp")),
+				Check:  resource.ComposeTestCheckFunc(checkCaasClusterBlueprint("hpegl_caas_cluster_blueprint.testcb")),
 			},
 		},
 	})
@@ -116,10 +114,12 @@ func checkCaasClusterBlueprint(name string) resource.TestCheckFunc {
 
 func testCaasClusterBlueprintDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources["hpegl_caas_cluster_blueprint.testbp"]
+		rs, ok := s.RootModule().Resources["hpegl_caas_cluster_blueprint.testcb"]
 		if !ok {
-			return fmt.Errorf("Resource not found: %s", "hpegl_caas_cluster_blueprint.testbp")
+			return fmt.Errorf("Resource not found: %s", "hpegl_caas_cluster_blueprint.testcb")
 		}
+
+		siteID := rs.Primary.Attributes["site_id"]
 
 		p, err := client.GetClientFromMetaMap(testAccProvider.Meta())
 		if err != nil {

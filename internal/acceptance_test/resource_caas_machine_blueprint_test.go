@@ -3,6 +3,7 @@ package acceptancetest
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -17,42 +18,42 @@ import (
 
 const (
 	// Fill in these values based on the environment being used for acceptance testing
-	nameMbp         = "mbp-test"
-	siteIDMbp       = ""
+	nameMbp         = "test-machine-bp"
 	machineProvider = "vmaas"
 	osImage         = "sles-custom"
-	osVersion       = ""
-	computeType     = ""
-	size            = ""
-	storageType     = ""
+	osVersion       = "15"
+	computeType     = "General Purpose"
+	size            = "Large"
+	storageType     = "General Purpose"
+	spaceIDMbp      = "8d5dfbc0-f996-4e45-ab34-e719588a96ca"
 )
 
 var machineRoles = []string{"controlplane"}
 
 // nolint: gosec
 func testCaasMachineBlueprint() string {
-
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return fmt.Sprintf(`
 	provider hpegl {
 		caas {
-			api_url = "https://client.greenlake.hpe.com/api/caas/mcaas"
+			api_url = "https://mcaas.us1.greenlake-hpe.com/mcaas"
 		}
 	}
 	data "hpegl_caas_site" "blr" {
-		name = "BLR"
+		name = "Austin"
 		space_id = "%s"
 	  }
-	resource hpegl_caas_machine_blueprint test {
-		name         = "%s"
+	resource hpegl_caas_machine_blueprint testmb {
+		name         = "%s%d"
   		site_id = data.hpegl_caas_site.blr.id
-  		machine_roles = "%v"
+  		machine_roles = %q
 		machine_provider = "%s"
 		os_image = "%s"
 		os_version = "%s"
 		compute_type = "%s"
 		size = "%s"
 		storage_type = "%s"
-	}`, spaceID, nameMbp, machineRoles, machineProvider, osImage, osVersion, computeType, size, storageType)
+	}`, spaceIDMbp, nameMbp, r.Int63n(99999999), machineRoles, machineProvider, osImage, osVersion, computeType, size, storageType)
 }
 
 func TestCaasMachineBlueprintCreate(t *testing.T) {
@@ -60,11 +61,11 @@ func TestCaasMachineBlueprintCreate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: resource.ComposeTestCheckFunc(testCaasMachineBlueprintDestroy("hpegl_caas_machine_blueprint.test")),
+		CheckDestroy: resource.ComposeTestCheckFunc(testCaasMachineBlueprintDestroy("hpegl_caas_machine_blueprint.testmb")),
 		Steps: []resource.TestStep{
 			{
 				Config: testCaasMachineBlueprint(),
-				Check:  resource.ComposeTestCheckFunc(checkCaasMachineBlueprint("hpegl_caas_machine_blueprint.test")),
+				Check:  resource.ComposeTestCheckFunc(checkCaasMachineBlueprint("hpegl_caas_machine_blueprint.testmb")),
 			},
 		},
 	})
@@ -96,10 +97,12 @@ func checkCaasMachineBlueprint(name string) resource.TestCheckFunc {
 
 func testCaasMachineBlueprintDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources["hpegl_caas_machine_blueprint.test"]
+		rs, ok := s.RootModule().Resources["hpegl_caas_machine_blueprint.testmb"]
 		if !ok {
-			return fmt.Errorf("Resource not found: %s", "hpegl_caas_machine_blueprint.test")
+			return fmt.Errorf("Resource not found: %s", "hpegl_caas_machine_blueprint.testmb")
 		}
+
+		siteID := rs.Primary.Attributes["site_id"]
 
 		p, err := client.GetClientFromMetaMap(testAccProvider.Meta())
 		if err != nil {
@@ -116,7 +119,7 @@ func testCaasMachineBlueprintDestroy(name string) resource.TestCheckFunc {
 		clientCtx := context.WithValue(ctx, mcaasapi.ContextAccessToken, token)
 
 		var machineBlueprint *mcaasapi.MachineBlueprint
-		machineBlueprints, _, err := p.CaasClient.ClusterAdminApi.V1MachineblueprintsGet(clientCtx, siteIDMbp)
+		machineBlueprints, _, err := p.CaasClient.ClusterAdminApi.V1MachineblueprintsGet(clientCtx, siteID)
 		if err != nil {
 			return fmt.Errorf("Error in getting machine blueprint list %w", err)
 		}
