@@ -51,12 +51,10 @@ func testCaasClusterBlueprint() string {
   		name = "standard-master"
   		site_id = data.hpegl_caas_site.site.id
 	}
-
 	data "hpegl_caas_machine_blueprint" "mbworker" {
   		name = "standard-worker"
   		site_id = data.hpegl_caas_site.site.id
 	}
-
 	resource hpegl_caas_cluster_blueprint testcb {
 		name         = "%s%d"
 		k8s_version  = "%s"
