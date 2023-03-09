@@ -22,9 +22,10 @@ import (
 
 const (
 	clusterPrefix  = "test"
-	apiURL         = "https://mcaas.us1.greenlake-hpe.com/mcaas"
-	siteName       = "Austin"
+	apiURL         = "https://mcaas.intg.hpedevops.net/mcaas"
+	siteName       = "FTC"
 	testWorkerNode = "testworkernode"
+	//apiURL         = "https://mcaas.us1.greenlake-hpe.com/mcaas"
 )
 
 // nolint: gosec
@@ -74,7 +75,7 @@ func testCaasClusterUpdate(clusterName string) string {
 			site_id = data.hpegl_caas_site.site.id
 		}
 		data "hpegl_caas_machine_blueprint" "mbworker" {
-			name = "standard-worker"
+			name = "xlarge-worker"
 		site_id = data.hpegl_caas_site.site.id
 	  }
 	resource hpegl_caas_cluster testcluster {
