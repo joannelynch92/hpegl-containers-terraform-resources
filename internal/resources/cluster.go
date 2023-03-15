@@ -1,4 +1,4 @@
-// (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2020-2023 Hewlett Packard Enterprise Development LP
 
 package resources
 
@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -31,6 +32,7 @@ const (
 	stateReady          = "ready"
 	stateDeleted        = "deleted"
 	stateUpdating       = "updating"
+	stateUpgrading      = "upgrading"
 
 	stateRetrying = "retrying" // placeholder state used to allow retrying after errors
 
@@ -42,9 +44,6 @@ const (
 	// or if the cluster isn't present in the list of clusters (and we're not checking that the
 	// cluster is deleted
 	retryLimit = 3
-
-	//Default worker Node Pool Name
-	defaultWorkerName = "worker"
 )
 
 // getTokenFunc type of function that is used to get a token, for use in polling loops
@@ -131,9 +130,16 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
+	// Set default master and worker nodes details
+	defaultFlattenMachineSetsDetail := schemas.FlattenMachineSetsDetail(&cluster.MachineSetsDetail)
+	if err = d.Set("default_machine_sets_detail", defaultFlattenMachineSetsDetail); err != nil {
+		return diag.FromErr(err)
+	}
+
 	//Add additional worker node pool after cluster creation
 	workerNodes, workerNodePresent := d.GetOk("worker_nodes")
-	if workerNodePresent {
+	newK8sVersionInterface, k8sVersionPresent := d.GetOk("kubernetesVersion")
+	if workerNodePresent || k8sVersionPresent {
 		workerNodesList := workerNodes.([]interface{})
 		machineSets := []mcaasapi.MachineSet{}
 
@@ -142,9 +148,15 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		defaultMachineSets := cluster.MachineSets
+		defaultWorkersName, err := GetDefaultWorkersName(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 		//Remove default worker node if its declared in worker nodes
-		if utils.WorkerPresentInMachineSets(machineSets, defaultWorkerName) {
-			defaultMachineSets = utils.RemoveWorkerFromMachineSets(cluster.MachineSets, defaultWorkerName)
+		for _, defaultWorkerName := range defaultWorkersName {
+			if utils.WorkerPresentInMachineSets(machineSets, defaultWorkerName) {
+				defaultMachineSets = utils.RemoveWorkerFromMachineSets(defaultMachineSets, defaultWorkerName)
+			}
 		}
 
 		machineSets = append(defaultMachineSets, machineSets...)
@@ -154,8 +166,16 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 		var finalMachineSets []mcaasapi.AllOfUpdateClusterMachineSetsItems
 		_ = json.Unmarshal(temp, &finalMachineSets)
+
+		//Check if kubernetesVersion update is present
+		newK8sVersion := ""
+		if k8sVersionPresent {
+			newK8sVersion = fmt.Sprintf("%v", newK8sVersionInterface)
+		}
+
 		updateCluster := mcaasapi.UpdateCluster{
-			MachineSets: finalMachineSets,
+			MachineSets:       finalMachineSets,
+			KubernetesVersion: newK8sVersion,
 		}
 
 		clientCtx := context.WithValue(ctx, mcaasapi.ContextAccessToken, token)
@@ -169,7 +189,7 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 
 		createStateConf := resource.StateChangeConf{
 			Delay:      0,
-			Pending:    []string{stateProvisioning, stateCreating, stateRetrying, stateUpdating, stateDeProvisioning},
+			Pending:    []string{stateProvisioning, stateCreating, stateRetrying, stateUpdating, stateDeProvisioning, stateUpgrading},
 			Target:     []string{stateReady},
 			Timeout:    d.Timeout("create"),
 			MinTimeout: pollingInterval,
@@ -486,8 +506,9 @@ func clusterUpdateContext(ctx context.Context, d *schema.ResourceData, meta inte
 
 	clientCtx := context.WithValue(ctx, mcaasapi.ContextAccessToken, token)
 	var diags diag.Diagnostics
+	newK8sVersionInterface, k8sVersionPresent := d.GetOk("kubernetes_version")
 
-	if d.HasChange("worker_nodes") {
+	if d.HasChange("worker_nodes") || k8sVersionPresent {
 		machineSets := []mcaasapi.MachineSet{}
 
 		workerNodes := d.Get("worker_nodes").([]interface{})
@@ -502,11 +523,15 @@ func clusterUpdateContext(ctx context.Context, d *schema.ResourceData, meta inte
 			defaultMachineSet := getDefaultMachineSet(dms.(map[string]interface{}))
 			defaultMachineSets = append(defaultMachineSets, defaultMachineSet)
 		}
-
-		if utils.WorkerPresentInMachineSets(machineSets, defaultWorkerName) {
-			defaultMachineSets = utils.RemoveWorkerFromMachineSets(defaultMachineSets, defaultWorkerName)
+		defaultWorkersName, err := GetDefaultWorkersName(d)
+		if err != nil {
+			return diag.FromErr(err)
 		}
-
+		for _, defaultWorkerName := range defaultWorkersName {
+			if utils.WorkerPresentInMachineSets(machineSets, defaultWorkerName) {
+				defaultMachineSets = utils.RemoveWorkerFromMachineSets(defaultMachineSets, defaultWorkerName)
+			}
+		}
 		machineSets = append(machineSets, defaultMachineSets...)
 		temp, err := json.Marshal(machineSets)
 		if err != nil {
@@ -514,8 +539,15 @@ func clusterUpdateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 		var finalMachineSets []mcaasapi.AllOfUpdateClusterMachineSetsItems
 		_ = json.Unmarshal(temp, &finalMachineSets)
+		//Check if kubernetesVersion update is present
+		newK8sVersion := ""
+		if k8sVersionPresent {
+			newK8sVersion = fmt.Sprintf("%v", newK8sVersionInterface)
+		}
+
 		updateCluster := mcaasapi.UpdateCluster{
-			MachineSets: finalMachineSets,
+			MachineSets:       finalMachineSets,
+			KubernetesVersion: newK8sVersion,
 		}
 		clusterID := d.Id()
 		cluster, resp, err := c.CaasClient.ClustersApi.V1ClustersIdPut(clientCtx, updateCluster, clusterID)
@@ -529,7 +561,7 @@ func clusterUpdateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		spaceID := d.Get("space_id").(string)
 		createStateConf := resource.StateChangeConf{
 			Delay:      0,
-			Pending:    []string{stateProvisioning, stateCreating, stateRetrying, stateUpdating, stateDeProvisioning},
+			Pending:    []string{stateProvisioning, stateCreating, stateRetrying, stateUpdating, stateDeProvisioning, stateUpgrading},
 			Target:     []string{stateReady},
 			Timeout:    d.Timeout("create"),
 			MinTimeout: pollingInterval,
@@ -554,4 +586,49 @@ func getDefaultMachineSet(defaultMachineSet map[string]interface{}) mcaasapi.Mac
 		OsVersion:          defaultMachineSet["os_version"].(string),
 	}
 	return wn
+}
+func getDefaultMachineSetDetail(defaultMachineSetDetail map[string]interface{}) mcaasapi.MachineSetDetail {
+	mr := defaultMachineSetDetail["machine_roles"].([]interface{})
+	MachineRoles := make([]mcaasapi.MachineRolesType, 0, len(mr))
+	for _, v := range mr {
+		MachineRoles = append(MachineRoles, mcaasapi.MachineRolesType(v.(string)))
+	}
+
+	wnd := mcaasapi.MachineSetDetail{
+		Name:                defaultMachineSetDetail["name"].(string),
+		OsImage:             defaultMachineSetDetail["os_image"].(string),
+		OsVersion:           defaultMachineSetDetail["os_version"].(string),
+		Count:               int32(defaultMachineSetDetail["count"].(float64)),
+		MachineRoles:        MachineRoles,
+		MachineProvider:     defaultMachineSetDetail["machine_provider"].(string),
+		Size:                defaultMachineSetDetail["size"].(string),
+		ComputeInstanceType: defaultMachineSetDetail["compute_type"].(string),
+		StorageInstanceType: defaultMachineSetDetail["storage_type"].(string),
+	}
+	return wnd
+}
+
+func GetDefaultWorkersName(d *schema.ResourceData) ([]string, error) {
+
+	defaultMachineSetsDetailInterface := d.Get("default_machine_sets_detail").([]interface{})
+	defaultMachineSetsDetail := []mcaasapi.MachineSetDetail{}
+
+	for _, dmsd := range defaultMachineSetsDetailInterface {
+		defaultMachineSetDetail := getDefaultMachineSetDetail(dmsd.(map[string]interface{}))
+		defaultMachineSetsDetail = append(defaultMachineSetsDetail, defaultMachineSetDetail)
+	}
+
+	var workerNames []string
+
+	for _, msd := range defaultMachineSetsDetail {
+		for _, role := range msd.MachineRoles {
+			if role == "worker" {
+				workerNames = append(workerNames, msd.Name)
+			}
+		}
+	}
+	if len(workerNames) == 0 {
+		return nil, fmt.Errorf("Worker node not present in the cluster")
+	}
+	return workerNames, nil
 }

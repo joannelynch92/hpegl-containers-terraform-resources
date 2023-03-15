@@ -31,6 +31,7 @@ func Cluster() map[string]*schema.Schema {
 		},
 		"kubernetes_version": {
 			Type:     schema.TypeString,
+			Optional: true,
 			Computed: true,
 		},
 		"cluster_provider": {
@@ -41,6 +42,13 @@ func Cluster() map[string]*schema.Schema {
 			Type: schema.TypeList,
 			Elem: &schema.Resource{
 				Schema: MachineSets(),
+			},
+			Computed: true,
+		},
+		"default_machine_sets_detail": {
+			Type: schema.TypeList,
+			Elem: &schema.Resource{
+				Schema: MachineSetsDetail(),
 			},
 			Computed: true,
 		},
@@ -109,6 +117,14 @@ func Cluster() map[string]*schema.Schema {
 					"count": {
 						Type:     schema.TypeFloat,
 						Required: true,
+					},
+					"os_version": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					"os_image": {
+						Type:     schema.TypeString,
+						Optional: true,
 					},
 				},
 			},
