@@ -165,7 +165,7 @@ func clusterCreateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		if err != nil {
 			return diag.Errorf("Error in parsing machinesets response %s", err)
 		}
-		var finalMachineSets []mcaasapi.AllOfUpdateClusterMachineSetsItems
+		var finalMachineSets []mcaasapi.UpdateClusterMachineSet
 		_ = json.Unmarshal(temp, &finalMachineSets)
 
 		//Check if kubernetesVersion update is present
@@ -241,7 +241,7 @@ func clusterReadContext(ctx context.Context, d *schema.ResourceData, meta interf
 	id := d.Id()
 	spaceID := d.Get("space_id").(string)
 	field := "spaceID eq " + spaceID
-	cluster, resp, err := c.CaasClient.ClustersApi.V1ClustersIdGet(clientCtx, id, field, nil)
+	cluster, resp, err := c.CaasClient.ClustersApi.V1ClustersIdGet(clientCtx, id, field)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -365,7 +365,7 @@ func clusterDeleteContext(ctx context.Context, d *schema.ResourceData, meta inte
 	id := d.Id()
 	spaceID := d.Get("space_id").(string)
 
-	resp, err := c.CaasClient.ClustersApi.V1ClustersIdDelete(clientCtx, id)
+	_, resp, err := c.CaasClient.ClustersApi.V1ClustersIdDelete(clientCtx, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -415,7 +415,7 @@ func createGetTokenFunc(
 		}
 		clientCtx := context.WithValue(ctx, mcaasapi.ContextAccessToken, token)
 		field := "spaceID eq " + spaceID
-		clusters, resp, err := c.CaasClient.ClustersApi.V1ClustersGet(clientCtx, field, nil)
+		clusters, resp, err := c.CaasClient.ClustersApi.V1ClustersGet(clientCtx, field)
 		if err != nil {
 			if resp != nil {
 				// Check err response code to see if we need to retry
@@ -538,7 +538,7 @@ func clusterUpdateContext(ctx context.Context, d *schema.ResourceData, meta inte
 		if err != nil {
 			return diag.Errorf("Error in parsing machinesets response %s", err)
 		}
-		var finalMachineSets []mcaasapi.AllOfUpdateClusterMachineSetsItems
+		var finalMachineSets []mcaasapi.UpdateClusterMachineSet
 		_ = json.Unmarshal(temp, &finalMachineSets)
 		//Check if kubernetesVersion update is present
 		newK8sVersion := ""
@@ -611,7 +611,8 @@ func getDefaultMachineSet(d *schema.ResourceData, defaultMachineSet map[string]i
 	}
 	wn := mcaasapi.MachineSet{
 		MachineBlueprintId: defaultMachineSet["machine_blueprint_id"].(string),
-		Count:              int32(defaultMachineSet["count"].(float64)),
+		MinSize:            int32(defaultMachineSet["min_size"].(float64)),
+		MaxSize:            int32(defaultMachineSet["max_size"].(float64)),
 		Name:               defaultMachineSet["name"].(string),
 		OsImage:            osImage,
 		OsVersion:          osVersion,
@@ -624,14 +625,16 @@ func getDefaultMachineSetDetail(defaultMachineSetDetail map[string]interface{}) 
 	for _, v := range mr {
 		MachineRoles = append(MachineRoles, mcaasapi.MachineRolesType(v.(string)))
 	}
-
+	macProvider := defaultMachineSetDetail["machine_provider"]
+	machineProvider := mcaasapi.MachineProviderName(macProvider.(string))
 	wnd := mcaasapi.MachineSetDetail{
 		Name:                defaultMachineSetDetail["name"].(string),
 		OsImage:             defaultMachineSetDetail["os_image"].(string),
 		OsVersion:           defaultMachineSetDetail["os_version"].(string),
-		Count:               int32(defaultMachineSetDetail["count"].(float64)),
+		MinSize:             int32(defaultMachineSetDetail["min_size"].(float64)),
+		MaxSize:             int32(defaultMachineSetDetail["max_size"].(float64)),
 		MachineRoles:        MachineRoles,
-		MachineProvider:     defaultMachineSetDetail["machine_provider"].(string),
+		MachineProvider:     &machineProvider,
 		Size:                defaultMachineSetDetail["size"].(string),
 		ComputeInstanceType: defaultMachineSetDetail["compute_type"].(string),
 		StorageInstanceType: defaultMachineSetDetail["storage_type"].(string),
