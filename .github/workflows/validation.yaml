@@ -7,7 +7,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        go: [ '1.19' ]
+        go: [ '1.21' ]
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v2
